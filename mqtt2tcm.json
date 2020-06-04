@@ -1,0 +1,95 @@
+{
+  "name": "MQTTtoTCM",
+  "type": "flogo:app",
+  "version": "0.0.1",
+  "appModel": "1.1.0",
+  "description": "",
+  "imports": [
+    "github.com/TIBCOSoftware/flogo-contrib/trigger/mqtt",
+    "github.com/project-flogo/contrib/activity/log",
+    "github.com/project-flogo/eftl/activity",
+    "github.com/project-flogo/flow"
+  ],
+  "triggers": [
+    {
+      "id": "receive_mqtt_message",
+      "ref": "#mqtt",
+      "name": "Receive MQTT Message",
+      "description": "Simple MQTT Trigger",
+      "settings": {
+        "broker": "tcp://10.0.0.190:1883",
+        "id": "flogo"
+      },
+      "handlers": [
+        {
+          "settings": {
+            "topic": "esp32/dht22"
+          },
+          "action": {
+            "ref": "#flow",
+            "settings": {
+              "flowURI": "res://flow:bridge_flow"
+            },
+            "input": {
+              "message": "=$.message"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "flow:bridge_flow",
+      "data": {
+        "name": "BridgeFlow",
+        "metadata": {
+          "input": [
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "id": "activity_2",
+            "name": "EFTL Activity",
+            "description": "EFTL Activity",
+            "activity": {
+              "ref": "#activity",
+              "input": {
+                "content": "=$flow.message",
+                "dest": "esp32"
+              },
+              "settings": {
+                "url": "wss://01c9s3v8d93kxexkk1sd4c4c90-apps.eu.messaging.cloud.tibco.com/channel",
+                "password": "21137044f15aac497789ee1b75902284",
+                "id": "flogo"
+              }
+            }
+          },
+          {
+            "id": "log_3",
+            "name": "Log",
+            "description": "Logs a message",
+            "activity": {
+              "ref": "#log",
+              "input": {
+                "message": "=$flow.message",
+                "addDetails": false,
+                "usePrint": false
+              }
+            }
+          }
+        ],
+        "links": [
+          {
+            "from": "activity_2",
+            "to": "log_3"
+          }
+        ]
+      }
+    }
+  ]
+}
